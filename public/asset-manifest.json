@@ -1,0 +1,20 @@
+{
+  "files": {
+    "main.css": "/static/css/main.9c3bce15.css",
+    "main.js": "/static/js/main.406ff95a.js",
+    "static/media/Roboto-Bold.ttf": "/static/media/Roboto-Bold.f80816a5455d171f948d.ttf",
+    "static/media/Skyfont-NonCommercial.otf": "/static/media/Skyfont-NonCommercial.d2151277ce0814443935.otf",
+    "static/media/Livvic-Italic.ttf": "/static/media/Livvic-Italic.953ce820649d0c165483.ttf",
+    "static/media/Livvic-Bold.ttf": "/static/media/Livvic-Bold.089af19ac41ce144a96c.ttf",
+    "static/media/Livvic-Regular.ttf": "/static/media/Livvic-Regular.9994035d65e433690b4a.ttf",
+    "static/media/Livvic-Medium.ttf": "/static/media/Livvic-Medium.e1727d156b658481f5c4.ttf",
+    "static/media/Air-Americana.ttf": "/static/media/Air-Americana.a24e6a76bbe10e7266aa.ttf",
+    "index.html": "/index.html",
+    "main.9c3bce15.css.map": "/static/css/main.9c3bce15.css.map",
+    "main.406ff95a.js.map": "/static/js/main.406ff95a.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9c3bce15.css",
+    "static/js/main.406ff95a.js"
+  ]
+}
