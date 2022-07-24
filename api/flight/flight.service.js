@@ -42,6 +42,8 @@ async function query(filter) {
 
       if (Object.keys(criteria).length) {
          criteria.CHAORD = filter.board
+         criteria.CHFLTN = { $regex: "^[0-9]*$" }
+
          const flights = await collection
             .find(criteria)
             .sort({ 'CHSTOL': -1 })
@@ -49,7 +51,7 @@ async function query(filter) {
          return { flights, lastRefresh, minDate, maxDate }
       } else {
          const flights = await collection
-            .find({ 'CHAORD': filter.board })
+            .find({ 'CHAORD': filter.board, 'CHFLTN' : { $regex: "^[0-9]*$" } })
             .sort({ 'CHSTOL': -1 })
             .limit(50)
             .toArray()
@@ -65,7 +67,7 @@ async function query(filter) {
 async function queryGroupList(filter) {
    try {
       const collection = await dbService.getCollection('flight')
-      const flights = await collection.find({ 'CHAORD': filter.board }).project({ 'CHOPERD': 1, 'CHFLTN': 1, 'CHRMINE': 1, 'CHLOCCT': 1, 'CHSTOL': 1, '_id': 0 }).sort({}).toArray()
+      const flights = await collection.find({ 'CHAORD': filter.board, 'CHFLTN' : { $regex: "^[0-9]*$" } }).project({ 'CHOPERD': 1, 'CHFLTN': 1, 'CHRMINE': 1, 'CHLOCCT': 1, 'CHSTOL': 1, '_id': 0 }).sort({}).toArray()
       return flights
 
    } catch (err) {
@@ -84,8 +86,8 @@ async function queryGroup(group) {
       else if (group.board === 'A') statusFilght = 'LANDED'
 
       let match = ''
-      if (group.field === 'CHRMINE') match = { 'CHAORD': group.board, 'CHRMINE': 'CANCELED' }
-      else match = { 'CHAORD': group.board, 'CHRMINE': statusFilght }
+      if (group.field === 'CHRMINE') match = { 'CHAORD': group.board, 'CHRMINE': 'CANCELED', 'CHFLTN' : { $regex: "^[0-9]*$" } }
+      else match = { 'CHAORD': group.board, 'CHRMINE': statusFilght, 'CHFLTN' : { $regex: "^[0-9]*$" } }
 
       let field = ''
       if (group.field === 'CHRMINE') field = '$CHSTOL'
@@ -196,7 +198,7 @@ function _buildCriteria({ flightNo, flightCompany, destination, status, schedule
    }
 
    if (scheduleDate) {
-      criteria.CHSTOL = scheduleDate 
+      criteria.CHSTOL = scheduleDate
       criteria.CHSTOL = { $regex: scheduleDate, $options: 'i' }
       criteria.CHSTOL = {
          "$gte": `${scheduleDate}T00:00:00.000Z`,
