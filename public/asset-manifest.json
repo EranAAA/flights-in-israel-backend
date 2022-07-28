@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.00490d91.css",
-    "main.js": "/static/js/main.23ec9059.js",
+    "main.js": "/static/js/main.468a16bf.js",
     "static/media/header.jpeg": "/static/media/header.8a93042d4f5400735218.jpeg",
     "static/media/Roboto-Bold.ttf": "/static/media/Roboto-Bold.f80816a5455d171f948d.ttf",
     "static/media/Skyfont-NonCommercial.otf": "/static/media/Skyfont-NonCommercial.d2151277ce0814443935.otf",
@@ -12,10 +12,10 @@
     "static/media/Air-Americana.ttf": "/static/media/Air-Americana.a24e6a76bbe10e7266aa.ttf",
     "index.html": "/index.html",
     "main.00490d91.css.map": "/static/css/main.00490d91.css.map",
-    "main.23ec9059.js.map": "/static/js/main.23ec9059.js.map"
+    "main.468a16bf.js.map": "/static/js/main.468a16bf.js.map"
   },
   "entrypoints": [
     "static/css/main.00490d91.css",
-    "static/js/main.23ec9059.js"
+    "static/js/main.468a16bf.js"
   ]
 }
