@@ -15,10 +15,8 @@ module.exports = {
 async function query(filter) {
    try {
       const criteria = _buildCriteria(filter)
-      // const criteriaSort = _buildCriteriaSort(filterBy)
-
       const collection = await dbService.getCollection('flight')
-
+      
       const lastRefresh = await collection
          .find()
          .sort({ createdAt: -1 })
@@ -40,18 +38,19 @@ async function query(filter) {
          .project({ 'CHSTOL': 1, '_id': 0 })
          .toArray()
 
-      if (Object.keys(criteria).length) {
-         criteria.CHAORD = filter.board
-         criteria.CHFLTN = { $regex: "^[0-9]*$" }
-
+      if (criteria.$and.length) {
+         criteria.$and.push({ 'CHFLTN': { $regex: "^[0-9]*$" } })
+         criteria.$and.push({ 'CHAORD': filter.board })
          const flights = await collection
             .find(criteria)
             .sort({ 'CHSTOL': -1 })
             .toArray()
+
+         console.log(flights.length);
          return { flights, lastRefresh, minDate, maxDate }
       } else {
          const flights = await collection
-            .find({ 'CHAORD': filter.board, 'CHFLTN' : { $regex: "^[0-9]*$" } })
+            .find({ 'CHAORD': filter.board, 'CHFLTN': { $regex: "^[0-9]*$" } })
             .sort({ 'CHSTOL': -1 })
             .limit(50)
             .toArray()
@@ -67,7 +66,14 @@ async function query(filter) {
 async function queryGroupList(filter) {
    try {
       const collection = await dbService.getCollection('flight')
-      const flights = await collection.find({ 'CHAORD': filter.board, 'CHFLTN' : { $regex: "^[0-9]*$" } }).project({ 'CHOPERD': 1, 'CHFLTN': 1, 'CHRMINE': 1, 'CHLOCCT': 1, 'CHSTOL': 1, '_id': 0 }).sort({}).toArray()
+      const flights = await collection.aggregate(
+         [
+            {
+               $match: { 'CHAORD': filter.board, 'CHFLTN': { $regex: "^[0-9]*$" } }
+            },
+            { $group: { "_id": { CHAORD: "$CHAORD", CHOPERD: "$CHOPERD", CHLOCCT: "$CHLOCCT" } } }
+         ]
+      ).toArray()
       return flights
 
    } catch (err) {
@@ -86,11 +92,13 @@ async function queryGroup(group) {
       else if (group.board === 'A') statusFilght = 'LANDED'
 
       let match = ''
-      if (group.field === 'CHRMINE') match = { 'CHAORD': group.board, 'CHRMINE': 'CANCELED', 'CHFLTN' : { $regex: "^[0-9]*$" } }
-      else match = { 'CHAORD': group.board, 'CHRMINE': statusFilght, 'CHFLTN' : { $regex: "^[0-9]*$" } }
+      if (group.field === 'CHRMINE') match = { 'CHAORD': group.board, 'CHRMINE': 'CANCELED', 'CHFLTN': { $regex: "^[0-9]*$" } }
+      else match = { 'CHAORD': group.board, 'CHRMINE': statusFilght, 'CHFLTN': { $regex: "^[0-9]*$" } }
 
       let field = ''
-      if (group.field === 'CHRMINE') field = '$CHSTOL'
+      if (group.field === 'CHRMINE') field = '$SCHEDULED'
+      else if (group.field === 'DATE') field = '$SCHEDULED'
+      else if (group.field === 'HOUR') field = '$SCHEDULED_HOUR'
       else field = `$${group.field}`
 
       const flights = await collection.aggregate([
@@ -111,8 +119,13 @@ async function queryGroup(group) {
             }
          },
          {
+            $addFields: {
+               SCHEDULED: { $substr: ["$CHSTOL", 0, 10] },
+               SCHEDULED_HOUR: { $hour: "$CHSTOL" },
+            }
+         },
+         {
             $group: {
-               // _id: `$${group['0']}`,
                _id: field,
                totalDifference: { $sum: "$difference" },
                countFlights: { $count: {} }
@@ -175,37 +188,31 @@ async function update(flight) {
 }
 
 function _buildCriteria({ flightNo, flightCompany, destination, status, scheduleDate }) {
-   const criteria = {}
+   const criteria = { $and: [] }
 
    if (flightNo) {
-      criteria.CHFLTN = flightNo
-      // criteria.CHFLTN = { $regex: flightNo, $options: 'i' }
+      criteria.$and.push({ CHFLTN: flightNo })
    }
 
    if (flightCompany) {
-      criteria.CHOPERD = flightCompany
-      // criteria.CHOPERD = { $regex: flightCompany, $options: 'i' }
+      criteria.$and.push({ CHOPERD: flightCompany })
    }
 
    if (destination) {
-      criteria.CHLOCCT = destination
-      // criteria.CHLOCCT = { $regex: destination, $options: 'i' }
+      criteria.$and.push({ CHLOCCT: destination })
    }
 
    if (status) {
-      // criteria.CHRMINE = status 
-      criteria.CHRMINE = { $regex: status, $options: 'i' }
+      criteria.$and.push({ CHRMINE: status })
    }
 
    if (scheduleDate) {
-      criteria.CHSTOL = scheduleDate
-      criteria.CHSTOL = { $regex: scheduleDate, $options: 'i' }
-      criteria.CHSTOL = {
-         "$gte": `${scheduleDate}T00:00:00.000Z`,
-         "$lt": `${scheduleDate}T23:59:59.000Z`
-      }
-      // criteria = { $expr: {$eq: [scheduleDate, { $dateToString: {date: "$CHSTOL", format: "%Y-%m-%d"}}]}}
+      criteria.$and.push({ CHSTOL: { "$gte": `${scheduleDate}T00:00:00.000Z` } })
+      criteria.$and.push({ CHSTOL: { "$lte": `${scheduleDate}T23:59:59.000Z` } })
    }
+
+   console.log(criteria);
+   console.log(`${scheduleDate}T00:00:00.000Z`);
 
    return criteria
 }
