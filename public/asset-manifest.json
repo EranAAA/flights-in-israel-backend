@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.00490d91.css",
-    "main.js": "/static/js/main.468a16bf.js",
+    "main.css": "/static/css/main.9cb2205c.css",
+    "main.js": "/static/js/main.8ad0c9fe.js",
     "static/media/header.jpeg": "/static/media/header.8a93042d4f5400735218.jpeg",
     "static/media/Roboto-Bold.ttf": "/static/media/Roboto-Bold.f80816a5455d171f948d.ttf",
     "static/media/Skyfont-NonCommercial.otf": "/static/media/Skyfont-NonCommercial.d2151277ce0814443935.otf",
@@ -11,11 +11,11 @@
     "static/media/Livvic-Medium.ttf": "/static/media/Livvic-Medium.e1727d156b658481f5c4.ttf",
     "static/media/Air-Americana.ttf": "/static/media/Air-Americana.a24e6a76bbe10e7266aa.ttf",
     "index.html": "/index.html",
-    "main.00490d91.css.map": "/static/css/main.00490d91.css.map",
-    "main.468a16bf.js.map": "/static/js/main.468a16bf.js.map"
+    "main.9cb2205c.css.map": "/static/css/main.9cb2205c.css.map",
+    "main.8ad0c9fe.js.map": "/static/js/main.8ad0c9fe.js.map"
   },
   "entrypoints": [
-    "static/css/main.00490d91.css",
-    "static/js/main.468a16bf.js"
+    "static/css/main.9cb2205c.css",
+    "static/js/main.8ad0c9fe.js"
   ]
 }

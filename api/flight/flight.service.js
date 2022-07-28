@@ -12,11 +12,21 @@ module.exports = {
    update
 }
 
-async function query(filter) {
+async function getDates() {
    try {
-      const criteria = _buildCriteria(filter)
       const collection = await dbService.getCollection('flight')
-      
+      const minDate = await collection
+         .find()
+         .sort({ CHSTOL: -1 })
+         .limit(1)
+         .project({ 'CHSTOL': 1, '_id': 0 })
+         .toArray()
+      const maxDate = await collection
+         .find()
+         .sort({ CHSTOL: 1 })
+         .limit(1)
+         .project({ 'CHSTOL': 1, '_id': 0 })
+         .toArray()
       const lastRefresh = await collection
          .find()
          .sort({ createdAt: -1 })
@@ -24,19 +34,19 @@ async function query(filter) {
          .project({ 'createdAt': 1, '_id': 0 })
          .toArray()
 
-      const minDate = await collection
-         .find()
-         .sort({ CHSTOL: -1 })
-         .limit(1)
-         .project({ 'CHSTOL': 1, '_id': 0 })
-         .toArray()
+      return { minDate, maxDate, lastRefresh }
+   } catch (err) {
+      logger.error('cannot find dates', err)
+      throw err
+   }
+}
 
-      const maxDate = await collection
-         .find()
-         .sort({ CHSTOL: 1 })
-         .limit(1)
-         .project({ 'CHSTOL': 1, '_id': 0 })
-         .toArray()
+async function query(filter) {
+   const { lastRefresh, minDate, maxDate } = await getDates()
+
+   try {
+      const criteria = _buildCriteria(filter)
+      const collection = await dbService.getCollection('flight')
 
       if (criteria.$and.length) {
          criteria.$and.push({ 'CHFLTN': { $regex: "^[0-9]*$" } })
@@ -45,9 +55,8 @@ async function query(filter) {
             .find(criteria)
             .sort({ 'CHSTOL': -1 })
             .toArray()
-
-         console.log(flights.length);
          return { flights, lastRefresh, minDate, maxDate }
+
       } else {
          const flights = await collection
             .find({ 'CHAORD': filter.board, 'CHFLTN': { $regex: "^[0-9]*$" } })
@@ -59,7 +68,23 @@ async function query(filter) {
 
    } catch (err) {
       logger.error('cannot find flights', err)
-      throw err
+      const flights = [{
+         _id: "",
+         CHOPER: "",
+         CHFLTN: "",
+         CHOPERD: '',
+         CHSTOL: '',
+         CHPTOL: "",
+         CHAORD: "",
+         CHLOC1D: "",
+         CHLOC1T: "Didn't found any result",
+         CHLOCCT: "",
+         CHTERM: "",
+         CHRMINE: "",
+         createdAt: 1659020408309
+      }]
+      return { flights, lastRefresh, minDate, maxDate }
+      // throw err
    }
 }
 
@@ -92,14 +117,14 @@ async function queryGroup(group) {
       else if (group.board === 'A') statusFilght = 'LANDED'
 
       let match = ''
-      if (group.field === 'CHRMINE') match = { 'CHAORD': group.board, 'CHRMINE': 'CANCELED', 'CHFLTN': { $regex: "^[0-9]*$" } }
-      else match = { 'CHAORD': group.board, 'CHRMINE': statusFilght, 'CHFLTN': { $regex: "^[0-9]*$" } }
+      if (group.field === 'CHRMINE') match = { /*'CHAORD': group.board,*/ 'CHRMINE': 'CANCELED', 'CHFLTN': { $regex: "^[0-9]*$" } }
+      else match = { /*'CHAORD': group.board,*/ 'CHRMINE': { $in: ["DEPARTED", "LANDED"] }, 'CHFLTN': { $regex: "^[0-9]*$" } }
 
       let field = ''
-      if (group.field === 'CHRMINE') field = '$SCHEDULED'
-      else if (group.field === 'DATE') field = '$SCHEDULED'
-      else if (group.field === 'HOUR') field = '$SCHEDULED_HOUR'
-      else field = `$${group.field}`
+      if (group.field === 'CHRMINE') field = { _id: '$SCHEDULED', CHAORD: '$CHAORD' }
+      else if (group.field === 'DATE') field = { _id: '$SCHEDULED', CHAORD: '$CHAORD' }
+      else if (group.field === 'HOUR') field = { _id: '$SCHEDULED_HOUR', CHAORD: '$CHAORD' }
+      else field = { _id: `$${group.field}`, CHAORD: '$CHAORD' } // `$${group.field}`
 
       const flights = await collection.aggregate([
          {
@@ -210,9 +235,6 @@ function _buildCriteria({ flightNo, flightCompany, destination, status, schedule
       criteria.$and.push({ CHSTOL: { "$gte": `${scheduleDate}T00:00:00.000Z` } })
       criteria.$and.push({ CHSTOL: { "$lte": `${scheduleDate}T23:59:59.000Z` } })
    }
-
-   console.log(criteria);
-   console.log(`${scheduleDate}T00:00:00.000Z`);
 
    return criteria
 }
