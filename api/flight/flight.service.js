@@ -44,6 +44,12 @@ async function getDates() {
 async function query(filter) {
    const { lastRefresh, minDate, maxDate } = await getDates()
 
+   const event = new Date()
+   event.setHours(event.getHours() + 2)
+   let currentDate = event.toISOString()
+   event.setHours(event.getHours() + 0)
+   let twelveHoursLater = event.toISOString()
+
    try {
       const criteria = _buildCriteria(filter)
       const collection = await dbService.getCollection('flight')
@@ -59,8 +65,8 @@ async function query(filter) {
 
       } else {
          const flights = await collection
-            .find({ 'CHAORD': filter.board, 'CHFLTN': { $regex: "^[0-9]*$" } })
-            .sort({ 'CHSTOL': -1 })
+            .find({ 'CHAORD': filter.board, 'CHFLTN': { $regex: "^[0-9]*$" }, 'CHSTOL': { "$gte": currentDate }/*, 'CHSTOL': { "$lte": twelveHoursLater }*/ })
+            .sort({ 'CHSTOL': 1 })
             .limit(50)
             .toArray()
          return { flights, lastRefresh, minDate, maxDate }
