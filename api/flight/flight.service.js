@@ -61,6 +61,11 @@ async function query(filter) {
             .find(criteria)
             .sort({ 'CHSTOL': -1 })
             .toArray()
+         console.log('if', flights.length);
+         if (!flights.length) {
+            const flights = getDeafultMsg()
+            return { flights, lastRefresh, minDate, maxDate }
+         }
          return { flights, lastRefresh, minDate, maxDate }
 
       } else {
@@ -74,24 +79,28 @@ async function query(filter) {
 
    } catch (err) {
       logger.error('cannot find flights', err)
-      const flights = [{
-         _id: "",
-         CHOPER: "",
-         CHFLTN: "",
-         CHOPERD: '',
-         CHSTOL: '',
-         CHPTOL: "",
-         CHAORD: "",
-         CHLOC1D: "",
-         CHLOC1T: "Didn't found any result",
-         CHLOCCT: "",
-         CHTERM: "",
-         CHRMINE: "",
-         createdAt: 1659020408309
-      }]
+      const flights = getDeafultMsg()
       return { flights, lastRefresh, minDate, maxDate }
       // throw err
    }
+}
+
+function getDeafultMsg() {
+   return [{
+      _id: "Default",
+      CHOPER: "",
+      CHFLTN: "",
+      CHOPERD: '',
+      CHSTOL: '',
+      CHPTOL: "",
+      CHAORD: "",
+      CHLOC1D: "",
+      CHLOC1T: "Didn't found any result",
+      CHLOCCT: "",
+      CHTERM: "",
+      CHRMINE: "",
+      createdAt: 1659020408309
+   }]
 }
 
 async function queryGroupList(filter) {
