@@ -7,6 +7,7 @@ module.exports = {
    query,
    queryGroup,
    queryGroupList,
+   queryGroupByCategory,
    getById,
    add,
    update
@@ -172,6 +173,73 @@ async function queryGroup(group) {
             }
          },
       ]).sort({ 'totalDifference': -1 }).toArray()
+
+      return flights
+
+   } catch (err) {
+      logger.error('cannot find flights group', err)
+      throw err
+   }
+}
+
+async function queryGroupByCategory(category) {
+
+   console.log('category', category[0]);
+
+   try {
+      const collection = await dbService.getCollection('flight')
+      // just now for airline only 
+      // "CHOPER": "LY"
+
+      let match = { 'CHOPER': 'LY', 'CHFLTN': { $regex: "^[0-9]*$" }, 'CHRMINE': { $in: ["DEPARTED", "LANDED", "CANCELED"] } }
+      let field = { CHOPER: '$CHOPER', CHOPERD: '$CHOPERD', CHAORD: '$CHAORD', CHFLTN: "$CHFLTN", CHLOCCT: '$CHLOCCT', CHLOC1T: '$CHLOC1T', CHLOC1T: '$CHLOC1T', CHRMINE: '$CHRMINE' }
+
+      const flights = await collection.aggregate([
+         {
+            $match: match
+         },
+         {
+            $addFields: {
+               CHSTOL: { $dateFromString: { dateString: "$CHSTOL" } },
+               CHPTOL: { $dateFromString: { dateString: "$CHPTOL" } }
+            }
+         },
+         {
+            $addFields: {
+               difference: {
+                  $divide: [{ $subtract: ["$CHPTOL", "$CHSTOL",] }, 60000]
+               },
+            }
+         },
+         {
+            $addFields: {
+               // item: 1,
+               onTime: {  // Set to 1 if value < 10
+                  //  $cond: [ { $lt: ["$difference", 0 ] }, 1, 0] 
+                  $cond: { if: { $and: [{ $gte: ["$difference", -20] }, { $lte: ["$difference", 20] }] }, then: 1, else: 0 },
+                  // $cond: { if: { $lte: ["$difference", 20] }, then: 1, else: 0 } //$cond: { if: { $gte: [ "$qty", 250 ] }, then: 30, else: 20 }
+               },
+               delay: {  // Set to 1 if value > 10
+                  $cond: { if: { $gte: ["$difference", 21] }, then: 1, else: 0 }
+               },
+               early: {  // Set to 1 if value > 10
+                  $cond: { if: { $lte: ["$difference", -21] }, then: 1, else: 0 }
+               }
+            }
+         },
+         {
+            $group: {
+               _id: field,
+               totalDifference: { $sum: "$difference" },
+               countFlights: { $count: {} },
+               countEarly: { $sum: "$early" },
+               countDelay: { $sum: "$delay" },
+               countOnTime: { $sum: "$onTime" }
+            }
+         },
+      ]).toArray()
+
+      // console.log('queryGroupByCategory', flights);
 
       return flights
 

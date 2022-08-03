@@ -8,7 +8,8 @@ module.exports = {
    getFlightById,
    addFlight,
    updateFlight,
-   removeFlight
+   removeFlight,
+   getFlightsGroupByCategory
 }
 
 async function getFlights(req, res) {
@@ -29,6 +30,19 @@ async function getFlightsGroup(req, res) {
       logger.debug('Getting Flights Groups')
       const group = req.query || {}
       const flights = await flightService.queryGroup(group)
+      res.json(flights)
+   } catch (err) {
+      logger.error('Failed to get flights groups', err)
+      res.status(500).send({ err: 'Failed to get flights groups' })
+   }
+}
+
+async function getFlightsGroupByCategory(req, res) {
+   try {
+      logger.debug('Getting Flights Groups')
+      const category = req.query || {}
+
+      const flights = await flightService.queryGroupByCategory(category)
       res.json(flights)
    } catch (err) {
       logger.error('Failed to get flights groups', err)
